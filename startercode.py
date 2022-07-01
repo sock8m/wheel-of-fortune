@@ -28,7 +28,12 @@ finalroundtext = ""
 def readDictionaryFile():
     global dictionary
     # Read dictionary file in from dictionary file location
+    opendict = open(dictionaryloc)
+    readdict = opendict.read().splitlines()
+    opendict.close()
     # Store each word in a list.
+    for word in readdict:
+        dictionary.append(word)
       
     
 def readTurnTxtFile():
@@ -47,11 +52,18 @@ def readRoundStatusTxtFile():
 def readWheelTxtFile():
     global wheellist
     # read the Wheel name from input using the Config wheelloc file location 
+    openwheel = open(wheeltextloc)
+    readwheel = openwheel.read().splitlines()
+    openwheel.close()
+    # Store each word in a list.
+    for category in readwheel:
+        wheellist.append(category)
     
 def getPlayerInfo():
     global players
     # read in player names from command prompt input
-
+    for i in range(0,len(players)):
+        players[i]["name"] = str(input(f"Enter the name of player {i+1}: "))
 
 def gameSetup():
     # Read in File dictionary
@@ -69,7 +81,11 @@ def gameSetup():
 def getWord():
     global dictionary
     #choose random word from dictionary
+    roundWord = random.choice(dictionary)
     #make a list of the word with underscores instead of letters.
+    roundUnderscoreWord = []
+    for i in range(0,len(roundWord)):
+        roundUnderscoreWord.append("_")
     return roundWord,roundUnderscoreWord
 
 def wofRoundSetup():
@@ -77,8 +93,12 @@ def wofRoundSetup():
     global roundWord
     global blankWord
     # Set round total for each player = 0
+    for i in range(0,len(players)):
+        players[i]["roundtotal"] = 0
     # Return the starting player number (random)
+    initPlayer = random.choice([0,1,2])
     # Use getWord function to retrieve the word and the underscore word (blankWord)
+    roundWord, blankWord = getWord()
 
     return initPlayer
 
@@ -89,24 +109,50 @@ def spinWheel(playerNum):
     global vowels
 
     # Get random value for wheellist
+    wheelRoll = random.choice(wheellist)
     # Check for bankrupcy, and take action.
+    if wheelRoll == "BANKRUPT":
+        players[playerNum]["roundtotal"] = 0
+        stillinTurn = False
     # Check for loose turn
+    elif wheelRoll == "LOSE A TURN":
+        stillinTurn = False
     # Get amount from wheel if not loose turn or bankruptcy
+    elif wheelRoll[0] == "$":
     # Ask user for letter guess
+        letterguess = str(input("Guess a letter!: "))
     # Use guessletter function to see if guess is in word, and return count
-    # Change player round total if they guess right.     
+        validguess, count = guessletter(letterguess, playerNum)
+    # Change player round total if they guess right.
+        if validguess:
+            players[playerNum]["roundtotal"] += int(wheelRoll[1:])
+    else:
+        print("there is an error with the wheel roll values!")   
     return stillinTurn
-
 
 def guessletter(letter, playerNum): 
     global players
     global blankWord
+    global roundWord
+
+    goodGuess = False
+    count = 0
     # parameters:  take in a letter guess and player number
+    for letternum in range(0,len(roundWord)):
     # Change position of found letter in blankWord to the letter instead of underscore 
+        if roundWord[letternum] == letter and letter not in vowels:
+            blankWord[letternum] = letter
     # return goodGuess= true if it was a correct guess
+            goodGuess = True
     # return count of letters in word. 
+            count += 1
     # ensure letter is a consonate.
-    
+    if goodGuess == False:
+        if letter in vowels:
+            print("You guessed a vowel!")
+        else:
+            print("This consonant is not in the word.")
+
     return goodGuess, count
 
 def buyVowel(playerNum):
