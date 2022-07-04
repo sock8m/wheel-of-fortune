@@ -137,7 +137,8 @@ def spinWheel(playerNum):
             print("Please enter a consonant!")
     # Change player round total if they guess right.
     else:
-        print("there is an error with the wheel roll values!")   
+        print("there is an error with the wheel roll values!")  
+
     return stillinTurn
 
 def guessletter(letter): 
@@ -164,12 +165,21 @@ def guessletter(letter):
 def buyVowel(playerNum):
     global players
     global vowels
+    global roundWord
+    global blankWord
+
+    # figure out if there are only vowels left to guess
+    remainVowels = False
+    for i in range(0,len(roundWord)):
+        if blankWord[i] == "_" and roundWord[i] in vowels:
+            remainVowels = True
+        elif blankWord[i] == "_" and roundWord[i] not in vowels:
+            remainVowels = False
     
     # Take in a player number
     # Ensure player has 250 for buying a vowelcost
-    if players[playerNum]["roundtotal"] > vowelcost:
+    if remainVowels:
         vowelGuess = str(input(f"Guess a vowel, player {playerNum+1}: ")).lower()
-        players[playerNum]["roundtotal"] -= vowelcost
     # Use guessLetter function to see if the letter is in the file
         if vowelGuess in vowels:
             validGuess = guessletter(vowelGuess)
@@ -181,8 +191,22 @@ def buyVowel(playerNum):
             validGuess = False
             print("Please enter a vowel!")
     else:
-        validGuess = False
-        print("You don't have enough money to buy a vowel!")
+        if players[playerNum]["roundtotal"] > vowelcost:
+            vowelGuess = str(input(f"Guess a vowel, player {playerNum+1}: ")).lower()
+            players[playerNum]["roundtotal"] -= vowelcost
+        # Use guessLetter function to see if the letter is in the file
+            if vowelGuess in vowels:
+                validGuess = guessletter(vowelGuess)
+                if validGuess:
+                    print(blankWord)
+                else:
+                    print("This letter is not in this word.")
+            else: 
+                validGuess = False
+                print("Please enter a vowel!")
+        else:
+            validGuess = False
+            print("You don't have enough money to buy a vowel!")
     # Ensure letter is a vowel
     # If letter is in the file let goodGuess = True
     return validGuess
@@ -238,12 +262,14 @@ def wofTurn(playerNum):
         else:
             print("Not a correct option")
 
+        if roundWord == ''.join(blankWord):
+            stillinTurn = False
+            break
+
         print(f"You have ${players[playerNum]['roundtotal']}.")     
     
     # Check to see if the word is solved, and return false if it is,
-    endofroundWord = ""
-    for i in blankWord:
-        endofroundWord += i
+    endofroundWord = ''.join(blankWord)
     if endofroundWord == roundWord: 
         return False
     else:
