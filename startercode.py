@@ -81,7 +81,7 @@ def gameSetup():
 def getWord():
     global dictionary
     #choose random word from dictionary
-    roundWord = random.choice(dictionary)
+    roundWord = random.choice(dictionary).lower()
     #make a list of the word with underscores instead of letters.
     roundUnderscoreWord = []
     for i in range(0,len(roundWord)):
@@ -124,49 +124,42 @@ def spinWheel(playerNum):
     # Ask user for letter guess
         letterguess = str(input("Guess a letter!: ")).lower()
     # Use guessletter function to see if guess is in word, and return count
-        validguess, count, consonantT = guessletter(letterguess, playerNum)
+        if letterguess not in vowels:
+            validguess = guessletter(letterguess)
+            if validguess:
+                players[playerNum]["roundtotal"] += int(wheelRoll[1:])
+                print(blankWord)
+            else:
+                stillinTurn = False
+                print("This letter is not in this word.")
+        else: 
+            stillinTurn = False
+            print("Please enter a consonant!")
     # Change player round total if they guess right.
-        if not validguess:
-            stillinTurn = False
-        elif validguess and consonantT == "C":
-            players[playerNum]["roundtotal"] += int(wheelRoll[1:])
-            print(blankWord)
-        elif validguess and consonantT == "V":
-            print("you guessed a vowel!")
-            stillinTurn = False
     else:
         print("there is an error with the wheel roll values!")   
     return stillinTurn
 
-def guessletter(letter, playerNum): 
+def guessletter(letter): 
     global players
     global blankWord
     global roundWord
 
     goodGuess = False
     count = 0
-    VorC = "not in word"
     # parameters:  take in a letter guess and player number
+
     for letternum in range(0,len(roundWord)):
-    # Change position of found letter in blankWord to the letter instead of underscore 
+        # Change position of found letter in blankWord to the letter instead of underscore 
         if roundWord[letternum] == letter:
             blankWord[letternum] = letter
-    # return goodGuess= true if it was a correct guess
+        # return goodGuess= true if it was a correct guess
             goodGuess = True
-    # return count of letters in word. 
+        # return count of letters in word. 
             count += 1
-    # ensure letter is a consonate.
-            if letter not in vowels:
-                VorC = "C"
-            elif letter in vowels:
-                VorC = "V"
-            else: 
-                VorC = "not in word"
-                print("check input letter for errors!")
-    if goodGuess == False:
-        print("This letter is not in the word.")
+        # ensure letter is a consonate.
 
-    return goodGuess, count, VorC
+    return goodGuess
 
 def buyVowel(playerNum):
     global players
@@ -178,16 +171,21 @@ def buyVowel(playerNum):
         vowelGuess = str(input(f"Guess a vowel, player {playerNum+1}: ")).lower()
         players[playerNum]["roundtotal"] -= vowelcost
     # Use guessLetter function to see if the letter is in the file
-        goodGuess, countV, vowelT = guessletter(vowelGuess, playerNum)
+        if vowelGuess in vowels:
+            validGuess = guessletter(vowelGuess)
+            if validGuess:
+                print(blankWord)
+            else:
+                print("This letter is not in this word.")
+        else: 
+            validGuess = False
+            print("Please enter a vowel!")
+    else:
+        validGuess = False
+        print("You don't have enough money to buy a vowel!")
     # Ensure letter is a vowel
-        if vowelT == "V":
-            goodGuess = True
-            print(blankWord)
-        elif vowelT == "C":
-            goodGuess = False
-            print("you guessed a consonant!")
     # If letter is in the file let goodGuess = True
-    return goodGuess
+    return validGuess
         
 def guessWord(playerNum):
     global players
@@ -202,11 +200,12 @@ def guessWord(playerNum):
         blankWord = []
         for letter in roundWord:
             blankWord.append(letter)
+        print(f"The word is {blankWord}! Congratulations!")
+        return False
     else:
         print("Wrong guess!")
+        return True
     # return False ( to indicate the turn will finish)  
-    
-    return False
     
     
 def wofTurn(playerNum):  
@@ -237,7 +236,9 @@ def wofTurn(playerNum):
         elif(choice.strip().upper() == "G"):
             stillinTurn = guessWord(playerNum)
         else:
-            print("Not a correct option")        
+            print("Not a correct option")
+
+        print(f"You have ${players[playerNum]['roundtotal']}.")     
     
     # Check to see if the word is solved, and return false if it is,
     endofroundWord = ""
@@ -287,8 +288,6 @@ def wofFinalRound():
     global finalroundtext
     global players
     global finalprize
-    winplayer = 0
-    amount = 0
     
     # Find highest gametotal player.  They are playing.
     maxGT = 0
@@ -296,9 +295,9 @@ def wofFinalRound():
         money = players[item]["gametotal"]
         if money > maxGT: 
             maxGT = money
-            FRplayer = item
+            winplayer = item
     # Print out instructions for that player and who the player is.
-    print(f"Welcome to the final round, {players[FRplayer]['name']}.")
+    print(f"Welcome to the final round, {players[winplayer]['name']}.")
     print("You have 3 consonant and 1 vowel guesses.")
     print("You get the letters R, S, T, L, N, and E for free.")
     print("Guess the word and win the grand prize!")
@@ -306,7 +305,7 @@ def wofFinalRound():
     roundWord, blankWord = getWord()
     # Use the guessletter function to check for {'R','S','T','L','N','E'}
     for i in ("r", "s", "t", "l", "n", "e"):
-        guessletter(i, FRplayer)
+        guessletter(i)
     # Print out the current blankWord with whats in it after applying {'R','S','T','L','N','E'}
     print(f"Here is your hint: {blankWord}")
     # Gather 3 consonats and 1 vowel and use the guessletter function to see if they are in the word
@@ -314,22 +313,27 @@ def wofFinalRound():
     consonantG = 0
     vowelG = 0
     guessingIncomplete = True
+    letterComplete = False
     while guessingIncomplete:
-        letter = str(input(f"Guess letter: ")).lower()
-        _,_,VorC = guessletter(letter, FRplayer)
-        if VorC == "C" and consonantG < 3:
-            print("This is in the word")
-            print(blankWord)
+        letter = str(input(f"Guess letter: ")).lower() 
+        if letter not in vowels and consonantG < 3:
             consonantG += 1
-        elif VorC == "C" and consonantG >= 3:
-            print("You have already guessed 3 consonants.")
-        elif VorC == "V" and vowelG < 1:
-            print("you guessed a vowel")
+            print(f"You have {3-consonantG} more consonant guesses.")
+            guessletter(letter)
             print(blankWord)
+        elif letter not in vowels and consonantG >= 3:
+            print("You have already guessed 3 consonants.")
+        elif letter in vowels and vowelG < 1:
             vowelG += 1
-        elif VorC == "V" and vowelG >= 1:
+            print(f"You have {1-vowelG} more vowel guess.")
+            guessletter(letter)
+            print(blankWord)
+        elif letter in vowels and vowelG >= 1:
             print("You have already guessed 1 vowel.")
-        else: print("error!")
+
+        if roundWord == ''.join(blankWord):
+            letterComplete = True
+            break
 
         if consonantG >= 3 and vowelG >= 1:
             guessingIncomplete = False
@@ -337,14 +341,18 @@ def wofFinalRound():
     # Print out the current blankWord again
     # Remember guessletter should fill in pthe letters with the positions in blankWord
     # Get user to guess word
-    print("Time to guess the word!")
-    frWordGuess = guessWord(FRplayer)
+    if letterComplete:
+        frWordGuess = False
+        print("You guessed all the letters in the word!")
+    else:
+        print("Time to guess the word!")
+        frWordGuess = guessWord(winplayer)
     # If they do, add finalprize and gametotal and print out that the player won 
     if frWordGuess:
-        players[FRplayer]['gametotal'] += finalprize
-        print(f"You won! Enjoy your total prize of ${players[FRplayer]['gametotal']}")
+        print(f"You lost! However, you still won a total of ${players[winplayer]['gametotal']}.")
     else:
-        print(f"You lost! However, you still won a total of ${players[FRplayer]['gametotal']}.")
+        players[winplayer]['gametotal'] += finalprize
+        print(f"You won! Enjoy your total prize of ${players[winplayer]['gametotal']}")
 
 def main():
     gameSetup()    
